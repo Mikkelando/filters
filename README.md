@@ -1,9 +1,10 @@
-## hist match (based on skimage)
+## hist match 
 
-####  numpy and skimage required
 ### usage
 ---
-#### 1. Для метчинга картинок 
+#### 1. Для метчинга картинок (based on skimage)
+
+####  numpy and skimage required
 ```{python}
 from filter_utils import match_histograms_moded
 
