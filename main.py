@@ -7,6 +7,8 @@ def get_video(path):
     frames = []
     cap = cv2.VideoCapture(path)
 
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    print(f"FPS of the video '{path}': {fps}")
     while True:
         ret, frame = cap.read()
 
@@ -19,12 +21,39 @@ def get_video(path):
 
     return frames
 
+from moviepy.editor import VideoFileClip
+
+def change_fps(input_path, output_path, target_fps, target_frame_count):
+    # Load the video clip
+    clip = VideoFileClip(input_path)
+    
+    # Change the frame rate
+    new_clip = clip.set_fps(target_fps)
+    
+    # Calculate the duration needed to get the target number of frames
+    target_duration = target_frame_count / target_fps
+    
+    # Cut the clip to the target duration
+    if new_clip.duration > target_duration:
+        new_clip = new_clip.subclip(0, target_duration)
+    
+    # Save the new clip
+    new_clip.write_videofile(output_path, fps=target_fps)
+
 
 
 if __name__ == "__main__":
-        
-    frames = get_video('data/karin_out_00078_t0.2_final.mp4')
-    driving = np.array(get_video('data/Karin.mp4'))
+    # input_path = 'data/Karin.mp4'
+    # output_path = 'data/adj_Karin.mp4'
+    # target_fps = 25
+    # target_frame_count = 460
+
+    # change_fps(input_path, output_path, target_fps, target_frame_count)
+
+    
+    frames = get_video('data\karin_out_00078_t0.2_final.mp4')
+    driving = np.array(get_video('data/adj_Karin.mp4'))
+    print(len(driving), len(frames))
     print('get videos')
 
     import mediapipe as mp
@@ -100,7 +129,7 @@ if __name__ == "__main__":
                         print("ALERT "*5)
                         break  # Skip if the face region is empty
 
-                    gen_bboxes.append([ x, y, w, h])
+                    gen_bboxes.append([x, y, w, h])
                     face = frame[y:y+h, x:x+w]
                     face_resized = cv2.resize(face, (512, 512))
                     gen_faces.append(face_resized)
@@ -117,7 +146,7 @@ if __name__ == "__main__":
     for i in range(len(gen_faces)):
 
         # new_image = histogram_matching(frames[i][:, :, ::-1], driving[i][:, :, ::-1])
-        new_image = match_histograms_moded(gen_faces[i][:, :, ::-1], faces[i][:, :, ::-1], strength=1.0)
+        new_image = match_histograms_moded(gen_faces[i][:, :, ::-1], faces[i+2][:, :, ::-1], strength=0.5)
 
 
         new_images.append(new_image.astype(np.uint8)[:, :, ::-1])
@@ -137,13 +166,13 @@ if __name__ == "__main__":
     print('new_images[0].shape', new_images[0].shape)
     new_frames = []
 
-    for drive, bbox, new_image in zip(driving, bboxes, new_images):
+    for drive, bbox, new_image in zip(driving[2:], bboxes[2:], new_images):
         new_frame = drive.copy()
         x, y, w, h = bbox
         half_h = h // 2
 
         new_image_resized = cv2.resize(new_image, (w, h))
-        new_frame[y+half_h: y + h, x:x+w] = new_image_resized[half_h:, :, :]
+        new_frame[y+half_h + half_h //4: y + h, x:x+w] = new_image_resized[half_h + half_h //4:, :, :]
         new_frames.append(new_frame)
     
 

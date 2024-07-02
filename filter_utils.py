@@ -6,7 +6,7 @@ from skimage.exposure import match_histograms
 
 from skimage._shared import utils 
 import shutil
-
+import mediapipe as mp
 
 
 
@@ -187,3 +187,83 @@ def match_histograms_moded(image, reference, *, strength=1.0, channel_axis=-1):
 
 
 
+
+
+
+
+
+
+def get_face_landmarks(image, face_mesh):
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = face_mesh.process(image_rgb)
+    if results.multi_face_landmarks:
+        return results.multi_face_landmarks[0].landmark
+    else:
+        return None
+
+def create_face_mask(image, landmarks):
+    mask = np.zeros(image.shape[:2], dtype=np.uint8)
+    points = np.array([(int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0])) for landmark in landmarks], dtype=np.int32)
+    cv2.fillConvexPoly(mask, points, 255)
+    return mask
+
+def apply_histogram_matching(gen_img, drive_img, match_strength=0.5):
+    
+    mp_face_mesh = mp.solutions.face_mesh
+    face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, min_detection_confidence=0.5)
+
+ 
+    gen_landmarks = get_face_landmarks(gen_img, face_mesh)
+    drive_landmarks = get_face_landmarks(drive_img, face_mesh)
+
+
+    if gen_landmarks and drive_landmarks:
+        
+        gen_mask = create_face_mask(gen_img, gen_landmarks)
+        drive_mask = create_face_mask(drive_img, drive_landmarks)
+
+        matched_image = gen_img.copy()
+
+        for i in range(3):
+            src_hist, _ = np.histogram(gen_img[:, :, i][gen_mask == 255], bins=256, range=(0, 256))
+            tgt_hist, _ = np.histogram(drive_img[:, :, i][drive_mask == 255], bins=256, range=(0, 256))
+
+            src_cdf = src_hist.cumsum()
+            tgt_cdf = tgt_hist.cumsum()
+
+            src_cdf = (src_cdf / src_cdf[-1]) * 255
+            tgt_cdf = (tgt_cdf / tgt_cdf[-1]) * 255
+
+            lut = np.interp(src_cdf, tgt_cdf, range(256))
+        
+           
+            
+            matched_image[:, :, i] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8)) *\
+                match_strength + (1 - match_strength) * gen_img[:, :, i]
+
+        return matched_image
+
+    else:
+        print("Face landmarks not detected in one or both images.")
+        return None
+    
+
+
+
+def get_video(path):
+    frames = []
+    cap = cv2.VideoCapture(path)
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    print(f"FPS of the video '{path}': {fps}")
+    while True:
+        ret, frame = cap.read()
+
+        if not ret:
+            break
+
+        frames.append(frame)
+
+    cap.release()
+
+    return frames
