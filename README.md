@@ -1,5 +1,6 @@
 ## hist match (based on skimage)
 
+####  numpy and skimage required
 ### usage
 ```{python}
 from filter_utils import match_histograms_moded
