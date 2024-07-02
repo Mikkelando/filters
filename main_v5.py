@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # cap2.release()
 
     gen_imgs = get_video('data/karin_out_00078_t0.2_final.mp4')
-    drive_imgs = get_video('data/tmp_video.mp4')
+    drive_imgs = get_video('data/Karin.mp4')
 
 
     matched_imgs = []
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     #     cv2.waitKey(0)
     #     cv2.destroyAllWindows()
 
-    videowriter = cv2.VideoWriter(f'data/Karin_matched_{match_strength}.mp4', cv2.VideoWriter_fourcc(*'XVID'), 25, matched_imgs.shape[1:3])
+    videowriter = cv2.VideoWriter(f'data/main_v5_Karin_matched_{match_strength}.mp4', cv2.VideoWriter_fourcc(*'XVID'), 25, matched_imgs.shape[1:3])
 
     for matched_img in tqdm(matched_imgs):
         videowriter.write(matched_img)

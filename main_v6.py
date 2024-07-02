@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     matched_imgs = []
 
-    match_strength = 1.0  # Example match strength (0 to 1)
+    match_strength = 0.6 # Example match strength (0 to 1)
     for gen_img, drive_img in tqdm(zip(gen_imgs, drive_imgs)):
 
         gen_landmarks = get_face_landmarks(gen_img, face_mesh)

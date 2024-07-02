@@ -216,8 +216,8 @@ def apply_histogram_matching(gen_img, drive_img, match_strength=0.5):
 
     if gen_landmarks and drive_landmarks:
         
-        gen_mask = create_face_mask(gen_img, gen_landmarks)
-        drive_mask = create_face_mask(drive_img, drive_landmarks)
+        gen_mask = create_face_mask_with_contour(gen_img, gen_landmarks)
+        drive_mask = create_face_mask_with_contour(drive_img, drive_landmarks)
 
         matched_image = gen_img.copy()
 
@@ -235,8 +235,8 @@ def apply_histogram_matching(gen_img, drive_img, match_strength=0.5):
         
            
             
-            matched_image[:, :, i] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8)) *\
-                match_strength + (1 - match_strength) * gen_img[:, :, i]
+            matched_image[:, :, i][gen_mask == 255] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8))[gen_mask == 255] *\
+                match_strength + (1 - match_strength) * gen_img[:, :, i][gen_mask == 255]
 
         return matched_image
 
@@ -269,8 +269,8 @@ def get_video(path):
 
 
 def apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmarks, drive_landmarks, match_strength=0.5):
-    gen_mask = create_face_mask(gen_img, gen_landmarks)
-    drive_mask = create_face_mask(drive_img, drive_landmarks)
+    gen_mask = create_face_mask_with_contour(gen_img, gen_landmarks)
+    drive_mask = create_face_mask_with_contour(drive_img, drive_landmarks)
     matched_image = gen_img.copy()
     for i in range(3):
         src_hist, _ = np.histogram(gen_img[:, :, i][gen_mask == 255], bins=256, range=(0, 256))
@@ -280,7 +280,29 @@ def apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmarks, drive_
         src_cdf = (src_cdf / src_cdf[-1]) * 255
         tgt_cdf = (tgt_cdf / tgt_cdf[-1]) * 255
         lut = np.interp(src_cdf, tgt_cdf, range(256))
-        matched_image[:, :, i] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8)) *\
-                match_strength + (1 - match_strength) * gen_img[:, :, i]
+        # matched_image[:, :, i] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8)) *\
+        #         match_strength + (1 - match_strength) * gen_img[:, :, i]
+
+        matched_image = gen_img.copy()
+        
+        matched_image[:, :, i][gen_mask == 255] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8))[gen_mask == 255] *\
+                match_strength + (1 - match_strength) * gen_img[:, :, i][gen_mask == 255]
+        
 
         return matched_image
+
+
+
+def create_face_mask_with_contour(image, landmarks):
+    mask = np.zeros(image.shape[:2], dtype=np.uint8)
+
+    # Extract x, y coordinates of all landmarks
+    landmark_points = [(int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0])) for landmark in landmarks]
+
+    # Find convex hull of the face landmarks (finds the boundary points in order)
+    convex_hull_points = cv2.convexHull(np.array(landmark_points, dtype=np.int32))
+
+    # Create a polygon from the convex hull points
+    cv2.fillConvexPoly(mask, convex_hull_points, 255)
+
+    return mask
