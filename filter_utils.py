@@ -208,11 +208,8 @@ def create_face_mask(image, landmarks):
     return mask
 
 def apply_histogram_matching(gen_img, drive_img, match_strength=0.5):
-    
     mp_face_mesh = mp.solutions.face_mesh
     face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, min_detection_confidence=0.5)
-
- 
     gen_landmarks = get_face_landmarks(gen_img, face_mesh)
     drive_landmarks = get_face_landmarks(drive_img, face_mesh)
 
@@ -267,3 +264,23 @@ def get_video(path):
     cap.release()
 
     return frames
+
+
+
+
+def apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmarks, drive_landmarks, match_strength=0.5):
+    gen_mask = create_face_mask(gen_img, gen_landmarks)
+    drive_mask = create_face_mask(drive_img, drive_landmarks)
+    matched_image = gen_img.copy()
+    for i in range(3):
+        src_hist, _ = np.histogram(gen_img[:, :, i][gen_mask == 255], bins=256, range=(0, 256))
+        tgt_hist, _ = np.histogram(drive_img[:, :, i][drive_mask == 255], bins=256, range=(0, 256))
+        src_cdf = src_hist.cumsum()
+        tgt_cdf = tgt_hist.cumsum()
+        src_cdf = (src_cdf / src_cdf[-1]) * 255
+        tgt_cdf = (tgt_cdf / tgt_cdf[-1]) * 255
+        lut = np.interp(src_cdf, tgt_cdf, range(256))
+        matched_image[:, :, i] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8)) *\
+                match_strength + (1 - match_strength) * gen_img[:, :, i]
+
+        return matched_image
