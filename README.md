@@ -20,7 +20,18 @@ from filter_utils import apply_histogram_matching
 
 ...
 
-matched_img = apply_histogram_matching(generated_image, ref_img, strength=1.0)
-# strength = 1.0 for full match, 0.0 for *no* match
+matched_img = apply_histogram_matching(generated_image, ref_img, match_strength=1.0)
+# match_strength = 1.0 for full match, 0.0 for *no* match
 # эта версия вычисляет лендмарки лица, метчинг более точный для лиц
+```
+
+#### 3. Для метчинга лиц pre_exist 
+```{python}
+from filter_utils import apply_histogram_matching_pre_exist
+
+...
+
+matched_img = apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmarks, drive_landmarks, match_strength=0.7)
+# match_strength = 1.0 for full match, 0.0 for *no* match
+# эта версия использует существубщие лендмарки лица, метчинг более точный для лиц.
 ```
