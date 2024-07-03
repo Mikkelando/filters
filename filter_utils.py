@@ -295,9 +295,12 @@ def apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmarks, drive_
 
 def create_face_mask_with_contour(image, landmarks):
     mask = np.zeros(image.shape[:2], dtype=np.uint8)
-
+    if type(landmarks) == 'google._upb._message.RepeatedCompositeContainer':
+        landmark_points = [(int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0])) for landmark in landmarks]
+    else:
+        landmark_points = landmarks
     # Extract x, y coordinates of all landmarks
-    landmark_points = [(int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0])) for landmark in landmarks]
+    
 
     # Find convex hull of the face landmarks (finds the boundary points in order)
     convex_hull_points = cv2.convexHull(np.array(landmark_points, dtype=np.int32))

@@ -34,7 +34,12 @@ if __name__ == "__main__":
         gen_landmarks = get_face_landmarks(gen_img, face_mesh)
         drive_landmarks = get_face_landmarks(drive_img, face_mesh)
 
+        gen_landmarks = [(int(landmark.x * gen_img.shape[1]), int(landmark.y * gen_img.shape[0])) for landmark in gen_landmarks]
+        drive_landmarks = [(int(landmark.x * drive_img.shape[1]), int(landmark.y * drive_img.shape[0])) for landmark in drive_landmarks]
 
+        # print(gen_landmarks)
+        # print(type(gen_landmarks))
+        # break
         matched_img = apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmarks, drive_landmarks, match_strength)
 
         if matched_img is not None:
