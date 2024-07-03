@@ -283,13 +283,13 @@ def apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmarks, drive_
         # matched_image[:, :, i] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8)) *\
         #         match_strength + (1 - match_strength) * gen_img[:, :, i]
 
-        matched_image = gen_img.copy()
+        
         
         matched_image[:, :, i][gen_mask == 255] = cv2.LUT(gen_img[:, :, i], lut.astype(np.uint8))[gen_mask == 255] *\
                 match_strength + (1 - match_strength) * gen_img[:, :, i][gen_mask == 255]
         
 
-        return matched_image
+    return matched_image
 
 
 
