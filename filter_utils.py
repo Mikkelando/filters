@@ -375,7 +375,25 @@ def get_bbox(landmarks_name):
     return x_min, y_min, x_max, y_max
 
 
-def smooth_lnd_for_video(frames_names, landmarks_name, power = 1, fps=25.0, qnt_l = 468):
+def get_bbox_v2(landmarks):
+    x_min, y_min, x_max, y_max = 9999, 9999 ,-1, -1
+
+    
+    # print('landmark_name: ', landmarks_name)
+    
+    landmarks = np.array(landmarks)
+    for lnd in landmarks:
+        
+        x_min = min(min(lnd[:, 0]), x_min)
+        y_min = min(min(lnd[:, 1]), y_min)
+        x_max = max(max(lnd[:, 0]), x_max)
+        y_max = max(max(lnd[:, 1]), y_max)
+
+
+    return x_min, y_min, x_max, y_max
+
+
+def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 468):
     config = {
         'freq': 120,       # Hz
         'mincutoff': 1.0,  # Hz
@@ -393,7 +411,7 @@ def smooth_lnd_for_video(frames_names, landmarks_name, power = 1, fps=25.0, qnt_
     t_frame = cv2.imread(frames_names[0])
     frame_size = t_frame.shape
 
-    x_min, y_min, x_max, y_max = get_bbox(landmarks_name)
+    x_min, y_min, x_max, y_max = get_bbox_v2(landmarks)
 
     x_min= int(max(x_min - 10, frame_size[0]))
     y_min = int(max(y_min - 10, frame_size[0]))
@@ -401,7 +419,7 @@ def smooth_lnd_for_video(frames_names, landmarks_name, power = 1, fps=25.0, qnt_
     y_max = int(min(y_max + 10, frame_size[1]))
     print('x_min, y_min, x_max, y_max', x_min, y_min, x_max, y_max)
     
-    landmarks = load_landmarks(landmarks_name, qnt_l = qnt_l)
+    # landmarks = load_landmarks(landmarks_name, qnt_l = qnt_l)
     for frames_name, landmark in tqdm(zip(frames_names, landmarks)):
         
 
