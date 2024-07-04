@@ -36,3 +36,18 @@ matched_img = apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmar
 # match_strength = 1.0 for full match, 0.0 for *no* match
 # эта версия использует существубщие лендмарки лица, метчинг более точный для лиц.
 ```
+---
+### denoise filter 
+### usage
+#### 1. Для сглаживания лендмарок
+```{python}
+from filter_utils import smooth_lnd_for_video
+
+...
+
+smoothed_landmarks = smooth_lnd_for_video(frames, landmarks, power = 3, fps=25.0)
+# frames - кадры видео
+# landmarks - список лендмарок для каждого кадра (список списков)
+# power - максимальная сила сглаживающего фильтра
+# fps - фпс видео
+```
