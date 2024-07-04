@@ -320,6 +320,10 @@ def create_face_mask_with_contour(image, landmarks):
 
 
 def compute_optical_flow(prev_frame, next_frame):
+
+    prev_frame = cv2.convertScaleAbs(prev_frame)
+    next_frame = cv2.convertScaleAbs(next_frame)
+
     prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
     next_gray = cv2.cvtColor(next_frame, cv2.COLOR_BGR2GRAY)
     flow = cv2.calcOpticalFlowFarneback(prev_gray, next_gray, None, 
@@ -341,9 +345,9 @@ def load_landmarks(csv_path, qnt_l=468):
     x_list = []
     y_list = []
     for row_index,row in enumerate(data_all[1:]):
-        frame_num = float(row[0])
-        if int(frame_num)!= row_index+1:
-            return None
+        # frame_num = float(row[0])
+        # if int(frame_num)!= row_index+1:
+        #     return None
         x_list.append([float(x) for x in row[0:0+qnt_l]])
         y_list.append([float(y) for y in row[0+qnt_l:0+qnt_l + qnt_l]])
     x_array = np.array(x_list)
@@ -353,11 +357,15 @@ def load_landmarks(csv_path, qnt_l=468):
 
 
 
-def get_bbox(landmarks_names):
+def get_bbox(landmarks_name):
     x_min, y_min, x_max, y_max = 9999, 9999 ,-1, -1
 
-    for landmark_name in landmarks_names:
-        lnd = load_landmarks(landmark_name)
+    
+    # print('landmark_name: ', landmarks_name)
+    landmarks = load_landmarks(landmarks_name)
+    landmarks = np.array(landmarks)
+    for lnd in landmarks:
+        
         x_min = min(min(lnd[:, 0]), x_min)
         y_min = min(min(lnd[:, 1]), y_min)
         x_max = max(max(lnd[:, 0]), x_max)
@@ -367,7 +375,7 @@ def get_bbox(landmarks_names):
     return x_min, y_min, x_max, y_max
 
 
-def smooth_lnd_for_video(frames_names, landmarks_names, power = 1, fps=25.0, qnt_l = 468):
+def smooth_lnd_for_video(frames_names, landmarks_name, power = 1, fps=25.0, qnt_l = 468):
     config = {
         'freq': 120,       # Hz
         'mincutoff': 1.0,  # Hz
@@ -380,30 +388,33 @@ def smooth_lnd_for_video(frames_names, landmarks_names, power = 1, fps=25.0, qnt
     idx = 0 
     filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(qnt_l)] for _ in range(power)]
 
+    # print('frames_names: ', frames_names[0])
 
-    frame_size = cv2.imread(frames_names[0]).shape
+    t_frame = cv2.imread(frames_names[0])
+    frame_size = t_frame.shape
 
-    x_min, y_min, x_max, y_max = get_bbox(landmarks_names)
+    x_min, y_min, x_max, y_max = get_bbox(landmarks_name)
+
+    x_min= int(max(x_min - 10, frame_size[0]))
+    y_min = int(max(y_min - 10, frame_size[0]))
+    x_max = int(min(x_max + 10, frame_size[1]))
+    y_max = int(min(y_max + 10, frame_size[1]))
+    print('x_min, y_min, x_max, y_max', x_min, y_min, x_max, y_max)
     
-    x_min= max(x_min - 10, frame_size[0])
-    y_min = max(y_min - 10, frame_size[0])
-    x_max = min(x_max + 10, frame_size[1])
-    y_max = min(y_max + 10, frame_size[1])
-    
-
-    for frames_name, landmark_name in tqdm(zip(frames_names, landmarks_names)):
+    landmarks = load_landmarks(landmarks_name, qnt_l = qnt_l)
+    for frames_name, landmark in tqdm(zip(frames_names, landmarks)):
         
 
         frame = np.zeros((frame_size))
         frame[y_min:y_max, x_min:x_max, :] = cv2.imread(frames_name)[y_min:y_max, x_min:x_max, :]
-        landmark = load_landmarks(landmark_name, qnt_l = qnt_l)
+        # landmark = load_landmarks(landmark_name, qnt_l = qnt_l)
 
 
         if idx == 0:
             prev_frame = frame
 
 
-    
+        # print(prev_frame.shape, frame.shape)
         flow = compute_optical_flow(prev_frame, frame)
         motion_magnitude = compute_motion_magnitude(flow)
 
