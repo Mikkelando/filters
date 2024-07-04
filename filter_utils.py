@@ -9,6 +9,8 @@ import shutil
 import mediapipe as mp
 
 
+from OneEuroFilter import OneEuroFilter
+
 
 def blur_area(image, ksize=(7, 7), sigmaX=0):
     """
@@ -309,3 +311,80 @@ def create_face_mask_with_contour(image, landmarks):
     cv2.fillConvexPoly(mask, convex_hull_points, 255)
 
     return mask
+
+
+
+
+
+def compute_optical_flow(prev_frame, next_frame):
+    prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+    next_gray = cv2.cvtColor(next_frame, cv2.COLOR_BGR2GRAY)
+    flow = cv2.calcOpticalFlowFarneback(prev_gray, next_gray, None, 
+                                        pyr_scale=0.5, levels=3, winsize=15, 
+                                        iterations=3, poly_n=5, poly_sigma=1.2, flags=0)
+    return flow
+
+def compute_motion_magnitude(flow):
+    magnitude, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+    return magnitude
+
+
+
+
+
+def smooth_lnd_for_video(frames, landmarks, power = 1, fps=25.0):
+    config = {
+        'freq': 120,       # Hz
+        'mincutoff': 1.0,  # Hz
+        'beta': 0.1,
+        'dcutoff': 1.0
+    }
+    filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(len(landmarks[0]))] for _ in range(power)]
+
+    SMOOTH = []
+
+    idx = 0 
+
+    for frame, landmark in zip(frames, landmarks):
+        
+        if idx == 0:
+            prev_frame = frame
+
+    
+        flow = compute_optical_flow(prev_frame, frame)
+        motion_magnitude = compute_motion_magnitude(flow)
+
+
+        timestamp = idx / fps
+
+        smoothed_landmarks = []
+        for i, point in enumerate(landmark):
+                    x = point[0]
+                    y = point[1]
+                    local_magnitude = motion_magnitude[int(y), int(x)]
+                    adaptive_power = max(1, power - int(local_magnitude))
+
+                    # for p in range(power):
+                    #     if p <= adaptive_power:
+                    #         x = filters[p][i][0](x, timestamp)
+                    #         y = filters[p][i][1](y, timestamp)
+                    #     else:
+                    #         _ = filters[p][i][0](x, timestamp)
+                    #         _ = filters[p][i][1](y, timestamp)
+
+                    if power > adaptive_power:
+                        quant = adaptive_power
+                    else:
+                        quant = power
+                    for p in range(quant):
+                        x = filters[p][i][0](x, timestamp)
+                        y = filters[p][i][1](y, timestamp)
+                    smoothed_landmarks.append([x, y])
+
+
+        SMOOTH.append(smoothed_landmarks)
+        idx += 1
+        prev_frame = frame
+
+
+    return SMOOTH
