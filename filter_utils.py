@@ -10,6 +10,7 @@ import mediapipe as mp
 
 
 from OneEuroFilter import OneEuroFilter
+from tqdm import tqdm
 
 
 def blur_area(image, ksize=(7, 7), sigmaX=0):
@@ -345,7 +346,7 @@ def smooth_lnd_for_video(frames, landmarks, power = 1, fps=25.0):
 
     idx = 0 
 
-    for frame, landmark in zip(frames, landmarks):
+    for frame, landmark in tqdm(zip(frames, landmarks)):
         
         if idx == 0:
             prev_frame = frame
@@ -379,7 +380,7 @@ def smooth_lnd_for_video(frames, landmarks, power = 1, fps=25.0):
                     for p in range(quant):
                         x = filters[p][i][0](x, timestamp)
                         y = filters[p][i][1](y, timestamp)
-                    smoothed_landmarks.append([x, y])
+                    smoothed_landmarks.append([int(x), int(y)])
 
 
         SMOOTH.append(smoothed_landmarks)
