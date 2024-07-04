@@ -1,3 +1,4 @@
+import csv
 import subprocess
 import time
 import cv2
@@ -332,27 +333,75 @@ def compute_motion_magnitude(flow):
 
 
 
+def load_landmarks(csv_path, qnt_l=468):
+
+    with open(csv_path, 'r') as f:
+        reader = csv.reader(f)
+        data_all = [row for row in reader]
+    x_list = []
+    y_list = []
+    for row_index,row in enumerate(data_all[1:]):
+        frame_num = float(row[0])
+        if int(frame_num)!= row_index+1:
+            return None
+        x_list.append([float(x) for x in row[0:0+qnt_l]])
+        y_list.append([float(y) for y in row[0+qnt_l:0+qnt_l + qnt_l]])
+    x_array = np.array(x_list)
+    y_array = np.array(y_list)
+    landmark_array = np.stack([x_array,y_array],2)
+    return landmark_array
 
 
-def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0):
+
+def get_bbox(landmarks_names):
+    x_min, y_min, x_max, y_max = 9999, 9999 ,-1, -1
+
+    for landmark_name in landmarks_names:
+        lnd = load_landmarks(landmark_name)
+        x_min = min(min(lnd[:, 0]), x_min)
+        y_min = min(min(lnd[:, 1]), y_min)
+        x_max = max(max(lnd[:, 0]), x_max)
+        y_max = max(max(lnd[:, 1]), y_max)
+
+
+    return x_min, y_min, x_max, y_max
+
+
+def smooth_lnd_for_video(frames_names, landmarks_names, power = 1, fps=25.0, qnt_l = 468):
     config = {
         'freq': 120,       # Hz
         'mincutoff': 1.0,  # Hz
         'beta': 0.1,
         'dcutoff': 1.0
     }
-    filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(len(landmarks[0]))] for _ in range(power)]
-
+    
     SMOOTH = []
 
     idx = 0 
+    filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(qnt_l)] for _ in range(power)]
 
-    for frames_name, landmark in tqdm(zip(frames_names, landmarks)):
+
+    frame_size = cv2.imread(frames_names[0]).shape
+
+    x_min, y_min, x_max, y_max = get_bbox(landmarks_names)
+    
+    x_min= max(x_min - 10, frame_size[0])
+    y_min = max(y_min - 10, frame_size[0])
+    x_max = min(x_max + 10, frame_size[1])
+    y_max = min(y_max + 10, frame_size[1])
+    
+
+    for frames_name, landmark_name in tqdm(zip(frames_names, landmarks_names)):
         
 
-        frame = cv2.imread(frames_name)
+        frame = np.zeros((frame_size))
+        frame[y_min:y_max, x_min:x_max, :] = cv2.imread(frames_name)[y_min:y_max, x_min:x_max, :]
+        landmark = load_landmarks(landmark_name, qnt_l = qnt_l)
+
+
         if idx == 0:
             prev_frame = frame
+
 
     
         flow = compute_optical_flow(prev_frame, frame)
