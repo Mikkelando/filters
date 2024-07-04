@@ -1,4 +1,5 @@
 import subprocess
+import time
 import cv2
 import os
 import numpy as np
@@ -364,7 +365,7 @@ def smooth_lnd_for_video(frames, landmarks, power = 1, fps=25.0):
                     y = point[1]
                     local_magnitude = motion_magnitude[int(y), int(x)]
                     adaptive_power = max(1, power - int(local_magnitude))
-
+                    
                     # for p in range(power):
                     #     if p <= adaptive_power:
                     #         x = filters[p][i][0](x, timestamp)

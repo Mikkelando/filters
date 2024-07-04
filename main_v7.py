@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
         
     print('PROCESS')
-    NEW_LND = smooth_lnd_for_video(gen_imgs, LND, power =5, fps = 25)
+    NEW_LND = smooth_lnd_for_video(gen_imgs, LND, power =7, fps = 25)
 
 
     frames_with_landmarks_1 = draw_landmarks_on_frames(gen_imgs, LND)
