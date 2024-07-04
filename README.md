@@ -45,8 +45,8 @@ from filter_utils import smooth_lnd_for_video
 
 ...
 
-smoothed_landmarks = smooth_lnd_for_video(frames, landmarks, power = 3, fps=25.0)
-# frames - кадры видео
+smoothed_landmarks = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0)
+# frames_name - список имен видео
 # landmarks - список лендмарок для каждого кадра (список списков)
 # power - максимальная сила сглаживающего фильтра
 # fps - фпс видео

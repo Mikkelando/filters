@@ -334,7 +334,7 @@ def compute_motion_magnitude(flow):
 
 
 
-def smooth_lnd_for_video(frames, landmarks, power = 1, fps=25.0):
+def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0):
     config = {
         'freq': 120,       # Hz
         'mincutoff': 1.0,  # Hz
@@ -347,8 +347,10 @@ def smooth_lnd_for_video(frames, landmarks, power = 1, fps=25.0):
 
     idx = 0 
 
-    for frame, landmark in tqdm(zip(frames, landmarks)):
+    for frames_name, landmark in tqdm(zip(frames_names, landmarks)):
         
+
+        frame = cv2.imread(frames_name)
         if idx == 0:
             prev_frame = frame
 
