@@ -45,12 +45,16 @@ from filter_utils import smooth_lnd_for_video
 
 ...
 
-smoothed_landmarks = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0, qnt_l = 468)
+smoothed_landmarks = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0, qnt_l = 468, anchors = None)
 # frames_name - список имен видео
 # landmarks - путь на файл с лендмарками 
 # power - максимальная сила сглаживающего фильтра
 # fps - фпс видео
 # qnt_l -количество лендмарок (468, 68)
+#
+# anchors - список якорных координат [ [(x1, y1), (x2, y2), (x3, y3)], [ ... ], ... ]
+# если указан список якорных координат, то использование:
+smoothed_landmarks, smooth_anchors = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0, qnt_l = 468, anchors = anchors)
 ```
 csv с лендмарками имеет вид 
 x_0, x_1, ... , x_n, y_0, y_1, ..., y_n

@@ -393,7 +393,7 @@ def get_bbox_v2(landmarks):
     return x_min, y_min, x_max, y_max
 
 
-def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 468):
+def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 468, anchors = None):
     config = {
         'freq': 120,       # Hz
         'mincutoff': 1.0,  # Hz
@@ -405,6 +405,10 @@ def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 4
 
     idx = 0 
     filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(qnt_l)] for _ in range(power)]
+
+    if anchors is not None:
+        filters_anchors = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(len(anchors[0]))] for _ in range(power)]
+        SMOOTH_ANCHOR = []
 
     # print('frames_names: ', frames_names[0])
 
@@ -440,19 +444,31 @@ def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 4
         timestamp = idx / fps
 
         smoothed_landmarks = []
+        if anchors is not None:
+            smooth_anchors = []
+            for i, point in enumerate(anchors[idx]):
+                    x = point[0]
+                    y = point[1]
+                    local_magnitude = motion_magnitude[int(y), int(x)]
+                    adaptive_power = max(1, power - int(local_magnitude))
+                    
+                    if power > adaptive_power:
+                        quant = adaptive_power
+                    else:
+                        quant = power
+                    for p in range(quant):
+                        x = filters_anchors[p][i][0](x, timestamp)
+                        y = filters_anchors[p][i][1](y, timestamp)
+                    smooth_anchors.append([int(x), int(y)])
+
+            SMOOTH_ANCHOR.append(smooth_anchors)
+
         for i, point in enumerate(landmark):
                     x = point[0]
                     y = point[1]
                     local_magnitude = motion_magnitude[int(y), int(x)]
                     adaptive_power = max(1, power - int(local_magnitude))
                     
-                    # for p in range(power):
-                    #     if p <= adaptive_power:
-                    #         x = filters[p][i][0](x, timestamp)
-                    #         y = filters[p][i][1](y, timestamp)
-                    #     else:
-                    #         _ = filters[p][i][0](x, timestamp)
-                    #         _ = filters[p][i][1](y, timestamp)
 
                     if power > adaptive_power:
                         quant = adaptive_power
@@ -464,9 +480,14 @@ def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 4
                     smoothed_landmarks.append([int(x), int(y)])
 
 
+        
+
+
         SMOOTH.append(smoothed_landmarks)
         idx += 1
         prev_frame = frame
 
-
-    return SMOOTH
+    if anchors is not None:
+        return SMOOTH, SMOOTH_ANCHOR
+    else:
+        return SMOOTH
