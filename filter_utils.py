@@ -417,9 +417,9 @@ def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 4
 
     x_min, y_min, x_max, y_max = get_bbox_v2(landmarks)
 
-    x_min= int(max(x_min - 10, frame_size[0]))
-    y_min = int(max(y_min - 10, frame_size[0]))
-    x_max = int(min(x_max + 10, frame_size[1]))
+    x_min= int(max(x_min - 10, 0))
+    y_min = int(max(y_min - 10, 0))
+    x_max = int(min(x_max + 10, frame_size[0]))
     y_max = int(min(y_max + 10, frame_size[1]))
     print('x_min, y_min, x_max, y_max', x_min, y_min, x_max, y_max)
     
