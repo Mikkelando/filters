@@ -58,4 +58,20 @@ smoothed_landmarks, smooth_anchors = smooth_lnd_for_video(frames_name, landmarks
 ```
 csv с лендмарками имеет вид 
 x_0, x_1, ... , x_n, y_0, y_1, ..., y_n
- 
+
+
+
+#### 2. Для сглаживания лендмарок Kalman
+```{python}
+from filter_utils import klmn_filter
+
+...
+
+smoothed_landmarks = klmn_filter(landmarks, POWER = 2)
+
+# landmarks - список списка лендмарков лендмарков для каждого кадра;  (n, qnt_L, 2) n - кол-во кадров, qnt_L - количество лендмарок,
+# power - сила сглаживающего фильтра
+
+# Возвращает сглаженные лендмарки  (n, qnt_L, 2)
+
+```
