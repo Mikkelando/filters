@@ -63,7 +63,7 @@ x_0, x_1, ... , x_n, y_0, y_1, ..., y_n
 
 #### 2. Для сглаживания лендмарок Kalman
 ```{python}
-from filter_utils import klmn_filter
+from new_denoiser import klmn_filter
 
 ...
 
