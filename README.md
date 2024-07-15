@@ -75,3 +75,5 @@ smoothed_landmarks = klmn_filter(landmarks, POWER = 2)
 # Возвращает сглаженные лендмарки  (n, qnt_L, 2)
 
 ```
+
+
