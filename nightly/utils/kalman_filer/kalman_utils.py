@@ -166,28 +166,83 @@ def klmn_filter(LND, POWER=2):
     NEW_LND = np.transpose(data, (2,1,0))
     return NEW_LND
 
+def stream_klmn_filter(lnd, filters, prev_value, prev_state_covariance=[[np.eye(1), np.eye(1)] for _ in range(468)] , power=4):
+    curr_data = []
+    
+    for i, pt in enumerate(lnd):
+        filter = filters[i]
+        x = pt[0]
+        y = pt[1]
+
+        (x_smoo, smoothed_state_covariances_x) = filter[0].filter_update(prev_value[i][0], prev_state_covariance[i][0], x)
+        (y_smoo, smoothed_state_covariances_y) = filter[0].filter_update(prev_value[i][1], prev_state_covariance[i][1], y)
+
+        curr_data.append([[x_smoo, smoothed_state_covariances_x], [y_smoo, smoothed_state_covariances_y]])
+    
+    return curr_data
+
+
+def get_filters(LND):
+    return [[KalmanFilter(initial_state_mean=LND[0, i, 0]) ,KalmanFilter(initial_state_mean=LND[0, i, 1]) ]  for i in range(len(LND[0]))]
+
 
 if __name__ == "__main__":
-    LND = load_landmarks('data/joe_face_lnd.csv')
+    LND = np.array(load_landmarks('data/joe_face_lnd.csv'))
     XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])
     YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])
 
-    XSa = []
-    YSa = []
+    filters = get_filters(LND)
+    NEW_LND = []
+    NEW_LND.append(LND[0])
+    for i, lnd in tqdm(enumerate(LND[1:])):
+        if i == 0:
+            data = stream_klmn_filter(lnd, filters, LND[0] )
+            # print(i, np.array([ [data[j][0][0], data[j][1][0]] for j in range(len(LND[0])) ]).shape)
+            # print([ [data[j][0][0], data[j][1][0]] for j in range(len(LND[0])) ])
 
+            # print(data[0][0][0][0][0])
+            NEW_LND.append(np.array([ [data[j][0][0][0][0], data[j][1][0][0][0]] for j in range(len(LND[0])) ]))
+        else:
+            data = stream_klmn_filter(lnd, filters, [ [data[i][0][0], data[i][1][0]] for i in range(len(LND[0])) ],
+                                       prev_state_covariance= [ [data[i][0][1], data[i][1][1]] for i in range(len(LND[0])) ])
+            
+            print(i, np.array([ [data[j][0][0][0][0], data[j][1][0][0][0]] for j in range(len(LND[0])) ]).shape)
+            NEW_LND.append(np.array([ [data[j][0][0][0][0], data[j][1][0][0][0]] for j in range(len(LND[0])) ]))
+          
 
-    for i, (xs, ys) in tqdm(enumerate(zip(XS, YS))):
-        if check_pos(ys, YS[1]):
+    NEW_LND = np.array(NEW_LND)
+    XS_NEW =  np.array([NEW_LND[:, i, 0] for i in range(len(NEW_LND[0]))])
 
-            XSa.append(xs)
-            YSa.append(ys)
-            # _ , large_jumps_x, threshold_x = split_into_clusters_v2(xs)
-            # _ , large_jumps_y, threshold_y = split_into_clusters_v2(ys)
-            # m_x = [1 if i in large_jumps_x else 0 for i in range(len(xs))] 
-            # m_y = [1 if i in large_jumps_y else 0 for i in range(len(ys))] 
+    print(NEW_LND.shape)
+    print(XS_NEW.shape)
     
-    XSa, YSa = np.array(XSa), np.array(YSa)
-    # Пример использования:
+
+    plt.plot(XS[0])
+    plt.plot(XS_NEW[0])
+    plt.show()
+
+
+
+
+
+
+
+    # XSa = []
+    # YSa = []
+
+
+    # for i, (xs, ys) in tqdm(enumerate(zip(XS, YS))):
+    #     if check_pos(ys, YS[1]):
+
+    #         XSa.append(xs)
+    #         YSa.append(ys)
+    #         # _ , large_jumps_x, threshold_x = split_into_clusters_v2(xs)
+    #         # _ , large_jumps_y, threshold_y = split_into_clusters_v2(ys)
+    #         # m_x = [1 if i in large_jumps_x else 0 for i in range(len(xs))] 
+    #         # m_y = [1 if i in large_jumps_y else 0 for i in range(len(ys))] 
+    
+    # XSa, YSa = np.array(XSa), np.array(YSa)
+    # # Пример использования:
     # # Замените XS и YS на ваши реальные данные
     # M = 468  # Количество точек
     # n = 10  # Количество кадров
@@ -196,17 +251,17 @@ if __name__ == "__main__":
     # YS = np.random.rand(M, n)  # Пример случайного массива координат Y
 
     # Применяем адаптивное сглаживание
-    XS_denoised, YS_denoised = adaptive_kalman_smoothing(XSa, YSa)
+    # XS_denoised, YS_denoised = adaptive_kalman_smoothing(XSa, YSa)
 
 
-    print(XS_denoised.shape)
-    print(YS_denoised.shape)
+    # print(XS_denoised.shape)
+    # print(YS_denoised.shape)
 
-    plt.plot(XS_denoised[0])
-    plt.plot(XS[0])
+    # plt.plot(XS_denoised[0])
+    # plt.plot(XS[0])
     # print(weak[0])
     # plt.scatter(np.arange(len(XS[0]))[weak[0]], XS[0][weak[0]])
-    plt.show()
+    # plt.show()
     # # Вывод результатов для первых 3 точек
     # for point_idx in range(3):
     #     print(f"Точка {point_idx + 1}:")
