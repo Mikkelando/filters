@@ -406,10 +406,10 @@ def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, anchors =
     if indicies is None:
         indicies = [i  for i in range(len(landmarks[0]))]
 
-    landmarks = np.array(landmarks)[:, indicies, :]
+    # landmarks_t = np.array(landmarks)[:, indicies, :]
 
     idx = 0 
-    filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(landmarks[0])] for _ in range(power)]
+    filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(len(landmarks[0]))] for _ in range(power)]
 
     if anchors is not None:
         filters_anchors = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(len(anchors[0]))] for _ in range(power)]
@@ -480,19 +480,21 @@ def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, anchors =
             SMOOTH_ANCHOR.append(smooth_anchors)
 
         for i, point in enumerate(landmark):
+                    
                     x = point[0]
                     y = point[1]
-                    local_magnitude = motion_magnitude[int(y), int(x)]
-                    adaptive_power = max(1, power - int(local_magnitude))
-                    
+                    if i in indicies:
+                        local_magnitude = motion_magnitude[int(y), int(x)]
+                        adaptive_power = max(1, power - int(local_magnitude))
+                        
 
-                    if power > adaptive_power:
-                        quant = adaptive_power
-                    else:
-                        quant = power
-                    for p in range(quant):
-                        x = filters[p][i][0](x, timestamp)
-                        y = filters[p][i][1](y, timestamp)
+                        if power > adaptive_power:
+                            quant = adaptive_power
+                        else:
+                            quant = power
+                        for p in range(quant):
+                            x = filters[p][i][0](x, timestamp)
+                            y = filters[p][i][1](y, timestamp)
                     smoothed_landmarks.append([int(x), int(y)])
 
 

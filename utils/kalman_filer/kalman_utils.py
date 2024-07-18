@@ -158,12 +158,20 @@ def klmn_filter(LND, POWER=2, indicies= None):
 
     if indicies is None:
         indicies = [i for i in range(len(LND[0]))]
-    XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])[indicies]
-    YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])[indicies]
+    XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])
+    YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])
 
-    XS, YS = adaptive_kalman_smoothing(np.array(XS), np.array(YS))
+    XS_t = XS[indicies]
+    YS_t = YS[indicies]
+
+
+
+    XS_t, YS_t = adaptive_kalman_smoothing(np.array(XS_t), np.array(YS_t))
     for _ in range(POWER - 1):
-        XS, YS = adaptive_kalman_smoothing(np.array(XS), np.array(YS))
+        XS_t, YS_t = adaptive_kalman_smoothing(np.array(XS_t), np.array(YS_t))
+
+    XS[indicies] = XS_t 
+    YS[indicies] = YS_t
 
     data = np.array([np.array(XS), np.array(YS)])
     NEW_LND = np.transpose(data, (2,1,0))
@@ -195,36 +203,9 @@ if __name__ == "__main__":
     XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])
     YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])
 
-    filters = get_filters(LND)
-    NEW_LND = []
-    NEW_LND.append(LND[0])
-    for i, lnd in tqdm(enumerate(LND[1:])):
-        if i == 0:
-            data = stream_klmn_filter(lnd, filters, LND[0] )
-            # print(i, np.array([ [data[j][0][0], data[j][1][0]] for j in range(len(LND[0])) ]).shape)
-            # print([ [data[j][0][0], data[j][1][0]] for j in range(len(LND[0])) ])
 
-            # print(data[0][0][0][0][0])
-            NEW_LND.append(np.array([ [data[j][0][0][0][0], data[j][1][0][0][0]] for j in range(len(LND[0])) ]))
-        else:
-            data = stream_klmn_filter(lnd, filters, [ [data[i][0][0], data[i][1][0]] for i in range(len(LND[0])) ],
-                                       prev_state_covariance= [ [data[i][0][1], data[i][1][1]] for i in range(len(LND[0])) ])
-            
-            print(i, np.array([ [data[j][0][0][0][0], data[j][1][0][0][0]] for j in range(len(LND[0])) ]).shape)
-            NEW_LND.append(np.array([ [data[j][0][0][0][0], data[j][1][0][0][0]] for j in range(len(LND[0])) ]))
-          
-
-    NEW_LND = np.array(NEW_LND)
-    XS_NEW =  np.array([NEW_LND[:, i, 0] for i in range(len(NEW_LND[0]))])
-
+    NEW_LND = klmn_filter(LND, POWER=2, indicies=[1,3,5,7,9])
     print(NEW_LND.shape)
-    print(XS_NEW.shape)
-    
-
-    plt.plot(XS[0])
-    plt.plot(XS_NEW[0])
-    plt.show()
-
 
 
 

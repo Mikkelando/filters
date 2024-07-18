@@ -41,20 +41,19 @@ matched_img = apply_histogram_matching_pre_exist(gen_img, drive_img, gen_landmar
 ### usage
 #### 1. Для сглаживания лендмарок
 ```{python}
-from filter_utils import smooth_lnd_for_video
+from utils.euro_filter import smooth_lnd_for_video 
 
 ...
 
-smoothed_landmarks = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0, qnt_l = 468, anchors = None)
+smoothed_landmarks = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0, anchors = None, indicies = None)
 # frames_name - список имен видео
 # landmarks - путь на файл с лендмарками 
 # power - максимальная сила сглаживающего фильтра
 # fps - фпс видео
-# qnt_l -количество лендмарок (468, 68)
-#
+# indicies - индексы лендмарок, которые должны быть отфильтрованы 
 # anchors - список якорных координат [ [(x1, y1), (x2, y2), (x3, y3)], [ ... ], ... ]
 # если указан список якорных координат, то использование:
-smoothed_landmarks, smooth_anchors = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0, qnt_l = 468, anchors = anchors)
+smoothed_landmarks, smooth_anchors = smooth_lnd_for_video(frames_name, landmarks, power = 3, fps=25.0, anchors = anchors, indicies = None)
 ```
 csv с лендмарками имеет вид 
 x_0, x_1, ... , x_n, y_0, y_1, ..., y_n
@@ -63,14 +62,15 @@ x_0, x_1, ... , x_n, y_0, y_1, ..., y_n
 
 #### 2. Для сглаживания лендмарок Kalman
 ```{python}
-from new_denoiser import klmn_filter
+from utils.kalman_filter import klmn_filter
 
 ...
 
-smoothed_landmarks = klmn_filter(landmarks, POWER = 2)
+smoothed_landmarks = klmn_filter(landmarks, POWER = 2, indicies = [i for i in range(len(landmarks[0]))])
 
 # landmarks - список списка лендмарков лендмарков для каждого кадра;  (n, qnt_L, 2) n - кол-во кадров, qnt_L - количество лендмарок,
 # power - сила сглаживающего фильтра
+# indicies - индексы лендмарок, которые должны быть отфильтрованы 
 
 # Возвращает сглаженные лендмарки  (n, qnt_L, 2)
 
