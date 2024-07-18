@@ -393,7 +393,7 @@ def get_bbox_v2(landmarks):
     return x_min, y_min, x_max, y_max
 
 
-def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 468, anchors = None):
+def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, anchors = None, indicies=None):
     config = {
         'freq': 120,       # Hz
         'mincutoff': 1.0,  # Hz
@@ -403,8 +403,13 @@ def smooth_lnd_for_video(frames_names, landmarks, power = 1, fps=25.0, qnt_l = 4
     
     SMOOTH = []
 
+    if indicies is None:
+        indicies = [i  for i in range(len(landmarks[0]))]
+
+    landmarks = np.array(landmarks)[:, indicies, :]
+
     idx = 0 
-    filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(qnt_l)] for _ in range(power)]
+    filters = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(landmarks[0])] for _ in range(power)]
 
     if anchors is not None:
         filters_anchors = [[[OneEuroFilter(**config), OneEuroFilter(**config)] for i in range(len(anchors[0]))] for _ in range(power)]

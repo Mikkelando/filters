@@ -154,9 +154,12 @@ def check_pos(xs, xs_nose):
 
 
 
-def klmn_filter(LND, POWER=2):
-    XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])
-    YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])
+def klmn_filter(LND, POWER=2, indicies= None):
+
+    if indicies is None:
+        indicies = [i for i in range(len(LND[0]))]
+    XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])[indicies]
+    YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])[indicies]
 
     XS, YS = adaptive_kalman_smoothing(np.array(XS), np.array(YS))
     for _ in range(POWER - 1):
@@ -165,6 +168,7 @@ def klmn_filter(LND, POWER=2):
     data = np.array([np.array(XS), np.array(YS)])
     NEW_LND = np.transpose(data, (2,1,0))
     return NEW_LND
+
 
 def stream_klmn_filter(lnd, filters, prev_value, prev_state_covariance=[[np.eye(1), np.eye(1)] for _ in range(468)] , power=4):
     curr_data = []
