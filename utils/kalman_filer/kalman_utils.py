@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import csv
 from matplotlib import pyplot as plt
 import numpy as np
@@ -198,13 +199,60 @@ def get_filters(LND):
     return [[KalmanFilter(initial_state_mean=LND[0, i, 0]) ,KalmanFilter(initial_state_mean=LND[0, i, 1]) ]  for i in range(len(LND[0]))]
 
 
+
+def worker(XS, YS, indices):
+    XS_t = XS[indices]
+    YS_t = YS[indices]
+    XS_t, YS_t = adaptive_kalman_smoothing(np.array(XS_t), np.array(YS_t))
+    print(indices)
+    return indices, XS_t, YS_t
+
+def klmn_filter_parallel(LND, POWER=2, indices=None):
+    if indices is None:
+        indices = [i for i in range(len(LND[0]))]
+    
+    XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])
+    YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])
+    
+    # Используем ThreadPoolExecutor для распараллеливания
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        chunk_size = len(indices) // executor._max_workers
+        
+        for i in range(0, len(indices), 4):
+            chunk_indices = indices[i:i + 4]
+            futures.append(executor.submit(worker, XS, YS, chunk_indices))
+        
+        for future in futures:
+            idx, XS_t, YS_t = future.result()
+            XS[idx] = XS_t
+            YS[idx] = YS_t
+
+    # Повторяем процесс для POWER - 1 раз
+    for _ in range(POWER - 1):
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for i in range(0, len(indices), 4):
+                chunk_indices = indices[i:i + 4]
+                futures.append(executor.submit(worker, XS, YS, chunk_indices))
+            
+            for future in futures:
+                idx, XS_t, YS_t = future.result()
+                XS[idx] = XS_t
+                YS[idx] = YS_t
+    
+    data = np.array([XS, YS])
+    NEW_LND = np.transpose(data, (2, 1, 0))
+    
+    return NEW_LND
+
 if __name__ == "__main__":
     LND = np.array(load_landmarks('data/joe_face_lnd.csv'))
     XS = np.array([LND[:, i, 0] for i in range(len(LND[0]))])
     YS = np.array([LND[:, i, 1] for i in range(len(LND[0]))])
 
 
-    NEW_LND = klmn_filter(LND, POWER=2, indicies=[1,3,5,7,9])
+    NEW_LND = klmn_filter_parallel(LND, POWER=2, indices=[1,3,5,7,9])
     print(NEW_LND.shape)
 
 
